@@ -1,9 +1,25 @@
 server:
   port: 8080
+  servlet:
+    session:
+      # The browser's only credential. Not readable by scripts, not sent on cross-site requests. Production also
+      # needs secure: true (HTTPS only): see docs/production-changes.md.
+      cookie:
+        http-only: true
+        same-site: lax
 
 spring:
   application:
     name: gateway
+  datasource:
+    hikari:
+      schema: gateway   # connections start in this schema, so Spring Session finds its tables
+  flyway:
+    schemas: gateway
+    default-schema: gateway
+  session:
+    jdbc:
+      initialize-schema: never   # Flyway owns the tables (V1__spring_session.sql)
   cloud:
     gateway:
       server:
@@ -14,27 +30,35 @@ spring:
           # sends the address it actually saw. Revisit with a load balancer in front (docs/production-changes.md).
           trusted-proxies: '127\.0\.0\.1|0:0:0:0:0:0:0:1'
           routes:
+            # The authorization server's browser-facing endpoints. Not /oauth2/token or /oauth2/jwks: only the
+            # gateway and the services call those, directly inside the network.
+            - id: auth-service-oauth
+              uri: ${AUTH_SERVICE_URL:http://localhost:8081}
+              predicates:
+                - Path=/oauth2/authorize,/connect/logout,/.well-known/openid-configuration
             - id: auth-service
               uri: ${AUTH_SERVICE_URL:http://localhost:8081}
               predicates:
                 - Path=/api/auth/**,/api/users/**
+              filters:
+                - TokenRelay=
             - id: community-service
               uri: ${COMMUNITY_SERVICE_URL:http://localhost:8082}
               predicates:
                 - Path=/api/communities/**
+              filters:
+                - TokenRelay=
             - id: post-service
               uri: ${POST_SERVICE_URL:http://localhost:8083}
               predicates:
                 - Path=/api/posts/**,/api/comments/**
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: ${AUTH_JWKS_URI:http://localhost:8081/.well-known/jwks.json}
-          issuer-uri: levddit-auth
-          authorities-claim-name: roles
-          authority-prefix: ROLE_
+              filters:
+                - TokenRelay=
 
 app:
-  cors:
-    allowed-origins: http://localhost:3000
+  oauth:
+    # The origin the browser sees (frontend, gateway and auth-service behind one address). auth-service's issuer.
+    public-url: ${APP_PUBLIC_URL:http://localhost:3000}
+    # Where the gateway reaches auth-service itself, for the code exchange, refresh and the signing key.
+    auth-service-url: ${AUTH_SERVICE_URL:http://localhost:8081}
+    client-secret: ${APP_OAUTH_GATEWAY_CLIENT_SECRET:}   # required; the same value auth-service has

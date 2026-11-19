@@ -61,14 +61,20 @@ services:
     ports:
       - "8080:8080"
     environment:
+      <<: *db-env   # sessions live in Postgres (schema gateway)
       AUTH_SERVICE_URL: http://auth-service:8081
       COMMUNITY_SERVICE_URL: http://community-service:8082
       POST_SERVICE_URL: http://post-service:8083
-      AUTH_JWKS_URI: http://auth-service:8081/.well-known/jwks.json
+      APP_OAUTH_GATEWAY_CLIENT_SECRET: local-gateway-secret   # local only; the same value as auth-service's
     depends_on:
-      - auth-service
-      - community-service
-      - post-service
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      community-service:
+        condition: service_started
+      post-service:
+        condition: service_started
 
   frontend:
     build:
