@@ -9,6 +9,8 @@
   Tailwind's own palette, fonts, font sizes and radii are switched off: the only colours, sizes and
   faces a component can name are these. Spacing (4px steps) and breakpoints (sm 640, lg 1024,
   xl 1280) are Tailwind's; they match the rhythm below.
+
+  Adding a token? Add its name to src/shared/lib/cn.ts too, so tailwind-merge knows its group.
 */
 @theme {
   --color-*: initial;
@@ -106,10 +108,6 @@
 @utility wrap {
   width: min(100% - 2 * var(--gut), var(--container));
   margin-inline: auto;
-}
-
-@custom-variant noscript {
-  @media (scripting: none) { @slot; }
 }
 
 @layer ui {

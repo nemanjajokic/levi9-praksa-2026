@@ -1,5 +1,5 @@
 import type { ButtonHTMLAttributes, MouseEvent, ReactNode } from 'react'
-import { cx } from '@/shared/lib/env'
+import { cn } from '@/shared/lib/cn'
 import { AppLink } from '@/shared/ui/Link'
 import type { ActionItem } from '@/shared/ui/types'
 
@@ -54,7 +54,7 @@ const heroSecondary = 'bg-[#fff] text-accent border-[color-mix(in_oklab,var(--ac
 export function Arrow({ size = 'md' }: { size?: ButtonSize }) {
   return (
     <svg
-      className={cx(
+      className={cn(
         'block flex-none -mr-0.5 overflow-visible fill-none stroke-current [stroke-linecap:round] [stroke-linejoin:round]',
         size === 'xl' ? 'size-[0.62em] stroke-[1.4]' : size === 'hero' ? 'size-4 stroke-[1.6]' : 'size-3 stroke-[1.6]',
       )}
@@ -71,7 +71,7 @@ export function Arrow({ size = 'md' }: { size?: ButtonSize }) {
 }
 
 function buttonClasses({ variant = 'primary', size = 'md', className }: Pick<ButtonLookProps, 'variant' | 'size' | 'className'>) {
-  return cx(base, sizes[size], size === 'hero' && variant === 'secondary' ? heroSecondary : variants[variant], className)
+  return cn(base, sizes[size], size === 'hero' && variant === 'secondary' ? heroSecondary : variants[variant], className)
 }
 
 /**
@@ -110,7 +110,7 @@ export interface ButtonRowProps {
 /** An action row: the main action and at most one quieter one. On a phone they stack and the quiet one becomes a link. */
 export function ButtonRow({ primary, secondary, arrow = false, size = 'md', primaryClassName, className }: ButtonRowProps) {
   return (
-    <div data-enter-row="" className={cx('flex flex-wrap items-center max-sm:w-full max-sm:flex-col max-sm:items-stretch', size === 'hero' ? 'gap-3.5' : 'gap-3', className)}>
+    <div data-enter-row="" className={cn('flex flex-wrap items-center max-sm:w-full max-sm:flex-col max-sm:items-stretch', size === 'hero' ? 'gap-3.5' : 'gap-3', className)}>
       <Button href={primary.href} onClick={primary.onClick} arrow={arrow} size={size} className={primaryClassName}>{primary.label}</Button>
       {secondary && (
         <Button
@@ -118,7 +118,7 @@ export function ButtonRow({ primary, secondary, arrow = false, size = 'md', prim
           size={size}
           href={secondary.href}
           onClick={secondary.onClick}
-          className={cx(
+          className={cn(
             'max-sm:underline max-sm:underline-offset-4 max-sm:decoration-line-strong',
             size === 'md' && 'max-sm:bg-transparent max-sm:border-transparent',
           )}

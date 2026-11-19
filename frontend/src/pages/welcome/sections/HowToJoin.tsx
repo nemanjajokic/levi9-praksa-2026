@@ -1,8 +1,8 @@
-import { Section, SectionHead } from '@/shared/ui/Section'
+import { Section, SectionHead } from '@/pages/welcome/ui/Section'
 import { PostCard } from '@/features/posts/PostCard'
 import { ReplyCard } from '@/features/posts/ReplyCard'
-import { cx } from '@/shared/lib/env'
-import { grid12 } from '@/shared/ui/layout/screen'
+import { cn } from '@/shared/lib/cn'
+import { grid12 } from '@/pages/welcome/ui/layout/screen'
 import type { Post, Reply } from '@/features/posts/types'
 
 export interface JoinStep {
@@ -24,7 +24,7 @@ export function HowToJoin({ title, steps, post, replies }: HowToJoinProps) {
   return (
     <Section id="join" screens={1} ground="surface">
       <SectionHead title={title} />
-      <div className={cx('items-center gap-y-8', grid12)}>
+      <div className={cn('items-center gap-y-8', grid12)}>
         <ol className="col-span-full min-w-0 border-b border-line-strong lg:col-span-5">
           {steps.map((s, i) => (
             <li key={s.id} className="grid grid-cols-[72px_minmax(0,1fr)] gap-4 border-t border-line-strong py-7">

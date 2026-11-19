@@ -1,6 +1,5 @@
-'use client'
 import { createContext, useContext } from 'react'
-import type { EnterPhase } from '@/shared/hooks/useHeroEnter'
+import type { EnterPhase } from '@/pages/welcome/ui/hero/useHeroEnter'
 
 export interface HeroState {
   phase: EnterPhase

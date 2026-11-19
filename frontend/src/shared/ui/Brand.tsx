@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { cx } from '@/shared/lib/env'
+import { cn } from '@/shared/lib/cn'
 import { AppLink } from '@/shared/ui/Link'
 
 export interface BrandProps {
@@ -14,7 +14,7 @@ export interface BrandProps {
 export function Brand({ name, href, mark, className }: BrandProps) {
   return (
     <AppLink
-      className={cx(
+      className={cn(
         'inline-flex min-h-11 flex-none items-center gap-1.5 font-display text-[clamp(16px,4.6vw,20px)] leading-none font-medium tracking-[-0.02em] whitespace-nowrap',
         'sm:min-h-0 sm:gap-2 sm:text-[22px] sm:whitespace-normal',
         className,

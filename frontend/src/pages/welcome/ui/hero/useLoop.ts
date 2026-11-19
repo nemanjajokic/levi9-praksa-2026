@@ -1,6 +1,4 @@
-'use client'
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
-import { usePage } from '@/shared/lib/page-context'
 import { useInView } from '@/shared/hooks/useInView'
 import { usePhone, useReducedMotion } from '@/shared/hooks/useMediaQuery'
 
@@ -22,7 +20,7 @@ export interface LoopOptions {
 }
 
 export interface LoopControl {
-  /** Whether it may move at all here (not a phone, kind other or reduced motion). */
+  /** Whether it may move at all here (not a phone, not reduced motion). */
   live: boolean
   paused: boolean
   setPaused: (paused: boolean) => void
@@ -34,19 +32,18 @@ class Stopped extends Error {}
 
 /**
  * The design system's card loop (ui.loop) as a hook: the finished picture first, then `cycles` rounds of
- * `run`, then the finished picture again. It rests off screen, never moves on a phone, a still
- * kind or under reduced motion, and stops for the pause button.
+ * `run`, then the finished picture again. It rests off screen, never moves on a phone
+ * or under reduced motion, and stops for the pause button.
  * `run` changes React state through the api's waits; it is read on every round, so it may close over
  * the latest props.
  */
 export function useLoop(ref: RefObject<Element | null>, run: (api: LoopApi) => Promise<void>, { cycles = 3, rest = 1200, still, enabled = true }: LoopOptions): LoopControl {
-  const { still: stillKind } = usePage()
   const reduced = useReducedMotion()
   const phone = usePhone()
   const onScreen = useInView(ref, { rootMargin: '48px' })
   const [paused, setPaused] = useState(false)
   const [round, setRound] = useState(0)
-  const live = enabled && !stillKind && !reduced && !phone
+  const live = enabled && !reduced && !phone
 
   const runRef = useRef(run)
   const stillRef = useRef(still)

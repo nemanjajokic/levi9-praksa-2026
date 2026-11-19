@@ -14,8 +14,3 @@ export function fontsReady(ms: number): Promise<void> {
     new Promise<void>(resolve => setTimeout(resolve, ms)),
   ])
 }
-
-/** Joins class names, dropping empty ones. */
-export function cx(...names: Array<string | false | null | undefined>): string {
-  return names.filter(Boolean).join(' ')
-}

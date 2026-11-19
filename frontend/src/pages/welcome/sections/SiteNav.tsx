@@ -1,5 +1,5 @@
-import { Nav, type NavItem } from '@/shared/ui/layout/Nav'
-import { PhotoImg } from '@/shared/ui/Media'
+import { Nav, type NavItem } from '@/pages/welcome/ui/layout/Nav'
+import { PhotoImg } from '@/pages/welcome/ui/Media'
 import type { ActionItem } from '@/shared/ui/types'
 import { offices, site } from '@/pages/welcome/content'
 

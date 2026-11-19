@@ -1,5 +1,5 @@
 import type { Reply } from '@/features/posts/types'
-import { cx } from '@/shared/lib/env'
+import { cn } from '@/shared/lib/cn'
 
 export interface ReplyCardProps {
   reply: Reply
@@ -14,7 +14,7 @@ function initials(handle: string): string {
 /** One reply in a thread: avatar, who and where from, the text, votes. Presentational only; fixed palette. */
 export function ReplyCard({ reply, className }: ReplyCardProps) {
   return (
-    <article className={cx('grid grid-cols-[32px_minmax(0,1fr)] items-start gap-3 text-left font-text', reply.depth === 1 && 'ml-11', className)}>
+    <article className={cn('grid grid-cols-[32px_minmax(0,1fr)] items-start gap-3 text-left font-text', reply.depth === 1 && 'ml-11', className)}>
       <span
         className="grid size-8 place-items-center rounded-full bg-[color-mix(in_oklab,var(--p-accent)_14%,var(--p-bg))] text-[12px] font-semibold tracking-[0.02em] text-p-accent"
         aria-hidden="true"

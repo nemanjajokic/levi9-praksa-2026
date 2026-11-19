@@ -1,5 +1,5 @@
-import { Section } from '@/shared/ui/Section'
-import { LiveWord } from '@/shared/ui/hero/LiveWord'
+import { Section } from '@/pages/welcome/ui/Section'
+import { LiveWord } from '@/pages/welcome/ui/hero/LiveWord'
 import { ButtonRow } from '@/shared/ui/Button'
 import type { ActionItem } from '@/shared/ui/types'
 

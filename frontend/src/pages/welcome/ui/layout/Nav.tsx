@@ -1,12 +1,12 @@
 import { useRef, type ReactNode } from 'react'
 import { Button } from '@/shared/ui/Button'
-import { cx } from '@/shared/lib/env'
+import { cn } from '@/shared/lib/cn'
 import { AppLink } from '@/shared/ui/Link'
 import type { ActionItem, LinkItem } from '@/shared/ui/types'
-import { Brand, type BrandProps } from '@/shared/ui/layout/Brand'
-import { useNavSheet } from '@/shared/hooks/useNavSheet'
-import { useScrollSpy } from '@/shared/hooks/useScrollSpy'
-import { grid12 } from '@/shared/ui/layout/screen'
+import { Brand, type BrandProps } from '@/shared/ui/Brand'
+import { useNavSheet } from '@/pages/welcome/ui/layout/useNavSheet'
+import { useScrollSpy } from '@/pages/welcome/ui/layout/useScrollSpy'
+import { grid12 } from '@/pages/welcome/ui/layout/screen'
 
 export interface NavMenuCard extends LinkItem {
   line: string
@@ -63,7 +63,7 @@ function cardSpan(count: number): string {
 function MenuPanel({ menu }: { menu: NavMenu }) {
   return (
     <div
-      className={cx(
+      className={cn(
         'absolute inset-x-0 top-full border-y border-line bg-bg pt-12 pb-16 text-ink',
         'invisible -translate-y-1.5 opacity-0 [transition:opacity_120ms_var(--ease),translate_120ms_var(--ease),visibility_0s_linear_120ms] motion-reduce:translate-y-0',
         'item-open:visible item-open:translate-y-0 item-open:opacity-100 item-open:[transition:opacity_200ms_var(--ease)_150ms,translate_200ms_var(--ease)_150ms,visibility_0s_linear_150ms]',
@@ -71,9 +71,9 @@ function MenuPanel({ menu }: { menu: NavMenu }) {
         'sheet:visible sheet:static sheet:col-span-full sheet:hidden sheet:translate-y-0 sheet:border-0 sheet:p-0 sheet:pb-4 sheet:opacity-100 sheet-expanded:block',
       )}
     >
-      <div className={cx('wrap', grid12, 'gap-y-card-gap sheet:w-full sheet:gap-y-4')}>
+      <div className={cn('wrap', grid12, 'gap-y-card-gap sheet:w-full sheet:gap-y-4')}>
         {menu.cards.map(card => (
-          <AppLink key={card.href + card.label} href={card.href} className={cx('group/card col-span-full grid min-w-0 gap-3 sheet:gap-1 sheet:py-2', cardSpan(menu.cards.length))}>
+          <AppLink key={card.href + card.label} href={card.href} className={cn('group/card col-span-full grid min-w-0 gap-3 sheet:gap-1 sheet:py-2', cardSpan(menu.cards.length))}>
             <div
               className="relative isolate block min-h-40 flex-[1_0_auto] overflow-clip rounded-md bg-[var(--ground-bg)] after:pointer-events-none after:absolute after:inset-0 after:z-[4] after:rounded-[inherit] after:shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--ink)_7%,transparent),inset_0_1px_0_color-mix(in_oklab,var(--ink)_4%,transparent)] after:content-[''] sheet:hidden"
             >
@@ -103,13 +103,13 @@ export function Nav({ brand, items, primary, secondary, skipTo = '#top', skipLab
   return (
     <header
       ref={navRef}
-      className={cx('fixed inset-x-0 top-0 z-50 h-nav border-b border-line bg-bg text-ink', sheet.open && 'is-open', sheet.menuOpen && 'm-menu-open')}
+      className={cn('fixed inset-x-0 top-0 z-50 h-nav border-b border-line bg-bg text-ink', sheet.open && 'is-open', sheet.menuOpen && 'm-menu-open')}
       data-m-nav="1"
       onPointerLeave={sheet.leaveBar}
     >
       <div className="wrap flex h-full items-center gap-2 sm:gap-3 lg:gap-8 xl:gap-16">
         <a
-          className={cx(
+          className={cn(
             'absolute top-1/2 left-[max(var(--gut),(100%-var(--container))/2)] z-[2] size-px overflow-hidden whitespace-nowrap [clip-path:inset(50%)]',
             'focus:inline-flex focus:h-btn focus:w-auto focus:-translate-y-1/2 focus:items-center focus:rounded-btn focus:border focus:border-line-strong focus:bg-bg',
             'focus:px-6 focus:font-text focus:text-body focus:leading-none focus:font-medium focus:text-ink focus:[clip-path:none]',
@@ -120,11 +120,10 @@ export function Nav({ brand, items, primary, secondary, skipTo = '#top', skipLab
         </a>
         <Brand {...brand} />
         <nav
-          className={cx(
+          className={cn(
             'flex min-w-0 flex-1 gap-1 self-stretch max-lg:hidden lg:max-xl:gap-0',
             'sheet:fixed sheet:inset-x-0 sheet:top-nav sheet:bottom-0 sheet:flex sheet:flex-col sheet:gap-0 sheet:overflow-y-auto sheet:bg-bg sheet:px-gut sheet:pt-4 sheet:pb-[calc(var(--btn-h)*2+56px)]',
             'sheet:transition-[opacity,translate] sheet:duration-200 sheet:ease-ui sheet:starting:-translate-y-2 sheet:starting:opacity-0',
-            'noscript:max-lg:mr-3 noscript:max-lg:flex noscript:max-lg:overflow-x-auto noscript:max-lg:border-r noscript:max-lg:border-line noscript:max-lg:pr-2 noscript:max-lg:[scrollbar-width:none] noscript:max-sm:hidden',
           )}
           aria-label="Main"
         >
@@ -134,11 +133,11 @@ export function Nav({ brand, items, primary, secondary, skipTo = '#top', skipLab
             return (
               <div
                 key={key}
-                className={cx('nav-item flex h-full items-center sheet:grid sheet:h-auto sheet:grid-cols-[1fr_auto] sheet:border-b sheet:border-line', expanded && 'is-expanded')}
+                className={cn('nav-item flex h-full items-center sheet:grid sheet:h-auto sheet:grid-cols-[1fr_auto] sheet:border-b sheet:border-line', expanded && 'is-expanded')}
                 onPointerEnter={() => sheet.enterItem(!!item.menu)}
               >
                 <AppLink
-                  className={cx(
+                  className={cn(
                     linkBase,
                     underline,
                     'inline-flex rounded-sm px-3 before:inset-x-3 [&[aria-current]]:after:inset-x-3 lg:max-xl:px-2 lg:max-xl:before:inset-x-2 lg:max-xl:[&[aria-current]]:after:inset-x-2',
@@ -170,14 +169,14 @@ export function Nav({ brand, items, primary, secondary, skipTo = '#top', skipLab
           })}
         </nav>
         <div
-          className={cx(
+          className={cn(
             'flex flex-none items-center gap-2.5 max-lg:ml-auto',
             'sheet:fixed sheet:inset-x-0 sheet:bottom-0 sheet:z-[51] sheet:grid sheet:border-t sheet:border-line sheet:bg-bg sheet:px-gut sheet:pt-4 sheet:pb-[calc(16px+env(safe-area-inset-bottom))]',
           )}
         >
           {secondary && (
             <AppLink
-              className={cx(
+              className={cn(
                 linkBase,
                 underline,
                 'hidden min-h-12 rounded-full border-[1.5px] border-[color-mix(in_oklab,var(--p-accent)_35%,transparent)] px-[22px] font-semibold text-p-accent before:inset-x-2 [&[aria-current]]:after:inset-x-2',
@@ -195,7 +194,7 @@ export function Nav({ brand, items, primary, secondary, skipTo = '#top', skipLab
         <button
           ref={toggleRef}
           type="button"
-          className="hidden size-11 flex-none cursor-pointer place-items-center rounded-btn border border-line-strong bg-transparent text-ink max-lg:inline-grid sheet:ml-auto noscript:hidden"
+          className="hidden size-11 flex-none cursor-pointer place-items-center rounded-btn border border-line-strong bg-transparent text-ink max-lg:inline-grid sheet:ml-auto"
           aria-expanded={sheet.open}
           aria-label="Menu"
           onClick={() => sheet.setOpen(!sheet.open)}

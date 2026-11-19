@@ -1,4 +1,3 @@
-'use client'
 import { createContext, createElement, useContext, type AnchorHTMLAttributes, type ComponentType, type ReactNode } from 'react'
 
 export type AppLinkProps = AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }

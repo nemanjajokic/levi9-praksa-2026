@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react'
-import { Section, SectionHead } from '@/shared/ui/Section'
-import { PhotoImg } from '@/shared/ui/Media'
+import { Section, SectionHead } from '@/pages/welcome/ui/Section'
+import { PhotoImg } from '@/pages/welcome/ui/Media'
 import { useInView } from '@/shared/hooks/useInView'
 import { useMediaQuery } from '@/shared/hooks/useMediaQuery'
 import type { Office } from '@/pages/welcome/content'

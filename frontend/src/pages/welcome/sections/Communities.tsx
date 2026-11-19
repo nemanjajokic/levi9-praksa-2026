@@ -1,4 +1,4 @@
-import { Section, SectionHead } from '@/shared/ui/Section'
+import { Section, SectionHead } from '@/pages/welcome/ui/Section'
 import type { Community, Post } from '@/features/posts/types'
 
 export interface CommunitiesProps {

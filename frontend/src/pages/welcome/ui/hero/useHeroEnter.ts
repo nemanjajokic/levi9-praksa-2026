@@ -1,7 +1,6 @@
-'use client'
 import { useEffect, useState, type RefObject } from 'react'
 import { useReducedMotion } from '@/shared/hooks/useMediaQuery'
-import { usePage } from '@/shared/lib/page-context'
+import { usePage } from '@/pages/welcome/ui/layout/page-context'
 import { fontsReady } from '@/shared/lib/env'
 import { useIsoLayoutEffect } from '@/shared/hooks/useIsoLayoutEffect'
 

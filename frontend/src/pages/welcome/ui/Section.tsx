@@ -1,8 +1,8 @@
 import type { CSSProperties, ReactNode } from 'react'
-import { cx } from '@/shared/lib/env'
+import { cn } from '@/shared/lib/cn'
 import { cssVars } from '@/shared/lib/style'
-import type { Ground, Screens } from '@/shared/ui/types'
-import { screenSection, screenWrap } from '@/shared/ui/layout/screen'
+import type { Ground, Screens } from '@/pages/welcome/ui/types'
+import { screenSection, screenWrap } from '@/pages/welcome/ui/layout/screen'
 
 export interface SectionProps {
   id: string
@@ -26,8 +26,8 @@ const groundClass: Record<Ground, string | undefined> = {
 /** One screen-tall section of the page with its centred column. */
 export function Section({ id, screens, ground = 'base', className, wrapClassName, style, children }: SectionProps) {
   return (
-    <section id={id} className={cx(screenSection, groundClass[ground], className)} style={cssVars({ '--h': screens }, style)}>
-      <div className={cx(screenWrap, 'flex flex-col', wrapClassName)}>{children}</div>
+    <section id={id} className={cn(screenSection, groundClass[ground], className)} style={cssVars({ '--h': screens }, style)}>
+      <div className={cn(screenWrap, 'flex flex-col', wrapClassName)}>{children}</div>
     </section>
   )
 }
@@ -44,7 +44,7 @@ export interface SectionHeadProps {
 /** A section's heading block: the h2 and an optional lead line. */
 export function SectionHead({ title, lead, id, flush = false, className }: SectionHeadProps) {
   return (
-    <div className={cx('grid max-w-[760px] gap-4', !flush && 'mb-head-gap', className)}>
+    <div className={cn('grid max-w-[760px] gap-4', !flush && 'mb-head-gap', className)}>
       <h2 id={id}>{title}</h2>
       {lead && <p className="max-w-[60ch] text-[length:var(--t-lead)] leading-normal text-ink">{lead}</p>}
     </div>

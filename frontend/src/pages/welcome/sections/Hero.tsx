@@ -1,12 +1,12 @@
-import { Hero as HeroShell } from '@/shared/ui/hero/Hero'
-import { HeroTitle } from '@/shared/ui/hero/HeroTitle'
+import { Hero as HeroShell } from '@/pages/welcome/ui/hero/Hero'
+import { HeroTitle } from '@/pages/welcome/ui/hero/HeroTitle'
 import { ButtonRow } from '@/shared/ui/Button'
 import type { ActionItem } from '@/shared/ui/types'
 import { lazy, Suspense } from 'react'
 import type { GlobePlace } from '@/features/offices/OfficeGlobe'
 import { PostCard } from '@/features/posts/PostCard'
-import { cx } from '@/shared/lib/env'
-import { grid12 } from '@/shared/ui/layout/screen'
+import { cn } from '@/shared/lib/cn'
+import { grid12 } from '@/pages/welcome/ui/layout/screen'
 import type { Post } from '@/features/posts/types'
 
 export interface HeroProps {
@@ -29,9 +29,9 @@ const OfficeGlobe = lazy(() => import('@/features/offices/OfficeGlobe').then(m =
 /** The chosen split hero: the words on five columns, the 3D office globe on six. */
 export function Hero({ kicker, title, lead, places, focus, globeLabel, post, register, login }: HeroProps) {
   return (
-    <HeroShell variant="split">
+    <HeroShell>
       <div className="wrap relative z-[1] flex h-full flex-col gap-y-12 max-sm:h-auto">
-        <div className={cx('hero-text h-full min-h-0 grid-rows-[minmax(0,1fr)] content-stretch items-stretch gap-y-card-gap', grid12)}>
+        <div className={cn('hero-text h-full min-h-0 grid-rows-[minmax(0,1fr)] content-stretch items-stretch gap-y-card-gap', grid12)}>
           <div className="col-span-full min-w-0 self-start lg:col-span-5">
             <p className="flex items-center gap-2 text-small text-muted">
               <span className="size-2 flex-none rounded-full bg-p-accent" aria-hidden="true" />

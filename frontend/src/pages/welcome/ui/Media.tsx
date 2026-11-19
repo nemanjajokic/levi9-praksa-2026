@@ -1,5 +1,4 @@
 import type { ImgHTMLAttributes } from 'react'
-import { cssVars } from '@/shared/lib/style'
 
 /** A photograph as data: the page passes these, the parts render them. */
 export interface Photo {
@@ -12,10 +11,6 @@ export interface Photo {
   srcSet?: string
   /** How wide it shows, for this frame (`(max-width: 1023px) 100vw, 50vw`). */
   sizes?: string
-  /** Its focal point in the frame (`object-position`, the design system's `--ly-pos`): "50% 40%". */
-  position?: string
-  /** The focal point on a phone (`--ly-pos-phone`), where the frame is taller. */
-  phonePosition?: string
   /** Where it came from, for the credits: client, library or shoot. */
   source?: 'client' | 'library' | 'shoot'
 }
@@ -26,7 +21,7 @@ export interface PhotoImgProps extends Omit<ImgHTMLAttributes<HTMLImageElement>,
   priority?: boolean
 }
 
-/** A shared photograph: its focal point as the design system's variables, lazy unless it is the hero's. */
+/** A photograph, lazy unless it is the hero's. */
 export function PhotoImg({ photo, priority = false, style, ...rest }: PhotoImgProps) {
   return (
     <img
@@ -40,7 +35,7 @@ export function PhotoImg({ photo, priority = false, style, ...rest }: PhotoImgPr
       fetchPriority={priority ? 'high' : undefined}
       decoding="async"
       data-source={photo.source}
-      style={cssVars({ '--ly-pos': photo.position, '--ly-pos-phone': photo.phonePosition }, style)}
+      style={style}
       {...rest}
     />
   )

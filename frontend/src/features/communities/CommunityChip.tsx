@@ -1,4 +1,4 @@
-import { cx } from '@/shared/lib/env'
+import { cn } from '@/shared/lib/cn'
 import type { Community } from '@/features/posts/types'
 
 export interface CommunityChipProps {
@@ -10,7 +10,7 @@ export interface CommunityChipProps {
 export function CommunityChip({ community, className }: CommunityChipProps) {
   return (
     <span
-      className={cx(
+      className={cn(
         'inline-flex w-fit items-baseline rounded-full bg-[color-mix(in_oklab,var(--p-accent)_10%,var(--p-bg))] px-2.5 py-0.5',
         'font-mono text-[13px] leading-5 font-medium tracking-normal text-p-accent',
         className,

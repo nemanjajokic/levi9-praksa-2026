@@ -1,4 +1,4 @@
-import { Closing, type FooterColumn } from '@/shared/ui/layout/Closing'
+import { Closing, type FooterColumn } from '@/pages/welcome/ui/layout/Closing'
 import type { ActionItem } from '@/shared/ui/types'
 import { LevddMark } from '@/pages/welcome/sections/SiteNav'
 

@@ -1,9 +1,9 @@
 import { routes } from '@/shared/config/routes'
-import type { NavItem } from '@/shared/ui/layout/Nav'
-import type { Photo } from '@/shared/ui/Media'
+import type { NavItem } from '@/pages/welcome/ui/layout/Nav'
+import type { Photo } from '@/pages/welcome/ui/Media'
 import type { GlobePlace } from '@/features/offices/OfficeGlobe'
 import type { JoinStep } from '@/pages/welcome/sections/HowToJoin'
-import type { FooterColumn } from '@/shared/ui/layout/Closing'
+import type { FooterColumn } from '@/pages/welcome/ui/layout/Closing'
 
 export const site = {
   name: 'Levddit',
@@ -32,7 +32,7 @@ export const offices: readonly Office[] = [
     label: 'Serbia',
     title: 'The Serbian office',
     body: 'Colleagues in Serbia post in the same threads as everyone else.',
-    photo: { src: '/offices/serbia.webp', alt: 'The Levi9 office building in Serbia, with the 9 on its facade', width: 726, height: 484, position: '50% 50%' },
+    photo: { src: '/offices/serbia.webp', alt: 'The Levi9 office building in Serbia, with the 9 on its facade', width: 726, height: 484 },
     lat: 44.0,
     lng: 20.9,
   },
@@ -41,7 +41,7 @@ export const offices: readonly Office[] = [
     label: 'Netherlands',
     title: 'The Dutch office',
     body: 'The Dutch office reads and answers the same communities as the rest.',
-    photo: { src: '/offices/netherlands.webp', alt: 'The Levi9 office building in the Netherlands, on a tree-lined street', width: 1500, height: 1006, position: '50% 50%' },
+    photo: { src: '/offices/netherlands.webp', alt: 'The Levi9 office building in the Netherlands, on a tree-lined street', width: 1500, height: 1006 },
     lat: 52.2,
     lng: 5.3,
   },
@@ -50,7 +50,7 @@ export const offices: readonly Office[] = [
     label: 'Romania',
     title: 'The Romanian office',
     body: 'Colleagues in Romania have the same l/ communities as everywhere else.',
-    photo: { src: '/offices/romania.webp', alt: 'The Levi9 office in Romania, with a butterfly on its patterned facade', width: 768, height: 512, position: '50% 50%' },
+    photo: { src: '/offices/romania.webp', alt: 'The Levi9 office in Romania, with a butterfly on its patterned facade', width: 768, height: 512 },
     lat: 47.16,
     lng: 27.59,
   },
@@ -59,7 +59,7 @@ export const offices: readonly Office[] = [
     label: 'Ukraine',
     title: 'The Ukrainian office',
     body: 'Ukrainian colleagues sign in with the same Levi9 email as the others.',
-    photo: { src: '/offices/ukraine.webp', alt: 'The Levi9 office building in Ukraine, red brick with large windows', width: 768, height: 512, position: '50% 50%' },
+    photo: { src: '/offices/ukraine.webp', alt: 'The Levi9 office building in Ukraine, red brick with large windows', width: 768, height: 512 },
     lat: 49.0,
     lng: 31.4,
   },

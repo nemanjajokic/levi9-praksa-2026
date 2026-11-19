@@ -1,4 +1,3 @@
-'use client'
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import { useDesktopNav } from '@/shared/hooks/useMediaQuery'
 
