@@ -1,18 +1,18 @@
 package com.levi9.reddit.auth;
 
-import com.levi9.reddit.auth.core.model.RefreshToken;
 import com.levi9.reddit.auth.core.model.User;
 import com.levi9.reddit.auth.core.model.UserRole;
 import com.levi9.reddit.auth.infrastructure.UserService;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import com.levi9.reddit.auth.infrastructure.repository.RefreshTokenRepository;
 import com.levi9.reddit.auth.infrastructure.repository.UserRepository;
 import jakarta.persistence.EntityManager;
 import java.time.Instant;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,7 +25,7 @@ class AuthServiceApplicationTests {
     private UserRepository userRepository;
 
     @Autowired
-    private RefreshTokenRepository refreshTokenRepository;
+    private JdbcTemplate jdbc;
 
     @Autowired
     private EntityManager entityManager;
@@ -43,8 +43,6 @@ class AuthServiceApplicationTests {
         User admin = userRepository.save(new User("admin", "admin@example.test", "hash", "Admin", "User"));
         User user = userRepository.save(new User("reader", "reader@example.test", "hash", "First", "Last"));
         user.ban(admin.getId(), "reason", now);
-        RefreshToken token = refreshTokenRepository.save(new RefreshToken(user.getId(), "token-hash", now.plusSeconds(60)));
-        token.revoke(now);
 
         entityManager.flush();
         entityManager.clear();
@@ -62,12 +60,6 @@ class AuthServiceApplicationTests {
         assertThat(stored.getBannedAt()).isEqualTo(now);
         assertThat(stored.getBannedBy()).isEqualTo(admin.getId());
 
-        RefreshToken storedToken = refreshTokenRepository.findById(token.getId()).orElseThrow();
-        assertThat(storedToken.getUserId()).isEqualTo(user.getId());
-        assertThat(storedToken.getTokenHash()).isEqualTo("token-hash");
-        assertThat(storedToken.getExpiresAt()).isEqualTo(now.plusSeconds(60));
-        assertThat(storedToken.getRevokedAt()).isEqualTo(now);
-
         stored.unban();
         entityManager.flush();
         entityManager.clear();
@@ -77,38 +69,32 @@ class AuthServiceApplicationTests {
     }
     @Test
     @Transactional
-    void deletionPersistsAndRevokesOnlyTheUsersUnrevokedTokens() {
-        Instant now = Instant.parse("2026-01-01T00:00:00Z");
+    void deletionPersistsAndRevokesOnlyTheUsersAuthorizations() {
         User user = userRepository.save(new User("delete-me", "delete@example.test", passwordEncoder.encode("secret"), "First", "Last"));
         User other = userRepository.save(new User("other", "other@example.test", "hash", "Other", "User"));
-        RefreshToken active = refreshTokenRepository.save(new RefreshToken(user.getId(), "active", now));
-        RefreshToken revoked = refreshTokenRepository.save(new RefreshToken(user.getId(), "revoked", now));
-        revoked.revoke(now);
-        RefreshToken otherToken = refreshTokenRepository.save(new RefreshToken(other.getId(), "other", now));
         entityManager.flush();
+        insertAuthorization("a1", user.getId());
+        insertAuthorization("a2", user.getId());
+        insertAuthorization("b1", other.getId());
 
         userService.delete(user.getId(), "secret");
         entityManager.flush();
         entityManager.clear();
 
         assertThat(userRepository.findById(user.getId()).orElseThrow().isDeleted()).isTrue();
-        assertThat(refreshTokenRepository.findById(active.getId()).orElseThrow().getRevokedAt()).isNotNull();
-        assertThat(refreshTokenRepository.findById(revoked.getId()).orElseThrow().getRevokedAt()).isEqualTo(now);
-        assertThat(refreshTokenRepository.findById(otherToken.getId()).orElseThrow().getRevokedAt()).isNull();
+        assertThat(authorizationIds()).containsExactly("b1");
     }
 
     @Test
     @Transactional
-    void passwordChangePersistsAndRevokesOnlyTheUsersTokens() {
+    void passwordChangePersistsAndRevokesOnlyTheUsersAuthorizations() {
         User user = userRepository.save(new User("reader", "reader@example.test",
                 passwordEncoder.encode("old secret"), "First", "Last"));
         User other = userRepository.save(new User("other", "other@example.test", "hash", "Other", "User"));
-        Instant expiresAt = Instant.now().plusSeconds(60);
-        RefreshToken first = refreshTokenRepository.save(new RefreshToken(user.getId(), "first", expiresAt));
-        RefreshToken second = refreshTokenRepository.save(new RefreshToken(user.getId(), "second", expiresAt));
-        RefreshToken otherToken = refreshTokenRepository.save(new RefreshToken(other.getId(), "other", expiresAt));
         entityManager.flush();
         entityManager.clear();
+        insertAuthorization("a1", user.getId());
+        insertAuthorization("b1", other.getId());
 
         userService.changePassword(user.getId(), "old secret", "new secret");
         entityManager.flush();
@@ -117,9 +103,17 @@ class AuthServiceApplicationTests {
         String hash = userRepository.findById(user.getId()).orElseThrow().getPasswordHash();
         assertThat(passwordEncoder.matches("new secret", hash)).isTrue();
         assertThat(passwordEncoder.matches("old secret", hash)).isFalse();
-        assertThat(refreshTokenRepository.findById(first.getId()).orElseThrow().getRevokedAt()).isNotNull();
-        assertThat(refreshTokenRepository.findById(second.getId()).orElseThrow().getRevokedAt()).isNotNull();
-        assertThat(refreshTokenRepository.findById(otherToken.getId()).orElseThrow().getRevokedAt()).isNull();
+        assertThat(authorizationIds()).containsExactly("b1");
     }
 
+    /** The minimum Spring's schema requires. The principal name is the user id, as the login stores it. */
+    private void insertAuthorization(String id, long userId) {
+        jdbc.update("""
+                INSERT INTO oauth2_authorization (id, registered_client_id, principal_name, authorization_grant_type)
+                VALUES (?, 'client', ?, 'authorization_code')""", id, String.valueOf(userId));
+    }
+
+    private List<String> authorizationIds() {
+        return jdbc.queryForList("SELECT id FROM oauth2_authorization ORDER BY id", String.class);
+    }
 }

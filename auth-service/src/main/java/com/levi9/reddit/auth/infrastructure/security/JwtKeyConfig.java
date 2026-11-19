@@ -7,6 +7,8 @@ import com.nimbusds.jose.jwk.KeyUse;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
+import com.nimbusds.jose.jwk.source.JWKSource;
+import com.nimbusds.jose.proc.SecurityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -27,7 +29,7 @@ import java.util.UUID;
 
 /**
  * The RS256 key pair auth-service signs access tokens with. Only the public half ever leaves this
- * service, through the JWKS endpoint.
+ * service, through the authorization server's JWKS endpoint ({@code /oauth2/jwks}).
  */
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(JwtProperties.class)
@@ -51,9 +53,15 @@ public class JwtKeyConfig {
                 "app.jwt.private-key is not set. Provide it, or set app.jwt.generate-key=true for local development.");
     }
 
+    /** Signs tokens, and is published (public half only) at {@code /oauth2/jwks} by the authorization server. */
     @Bean
-    JwtEncoder jwtEncoder(RSAKey jwtSigningKey) {
-        return new NimbusJwtEncoder(new ImmutableJWKSet<>(new JWKSet(jwtSigningKey)));
+    JWKSource<SecurityContext> jwkSource(RSAKey jwtSigningKey) {
+        return new ImmutableJWKSet<>(new JWKSet(jwtSigningKey));
+    }
+
+    @Bean
+    JwtEncoder jwtEncoder(JWKSource<SecurityContext> jwkSource) {
+        return new NimbusJwtEncoder(jwkSource);
     }
 
     /** Accepts a PKCS#8 PEM ("BEGIN PRIVATE KEY") with or without line breaks, so it fits in one env var. */

@@ -108,42 +108,6 @@ class AuthContractsTest {
         assertThat(violatedFields(tooLong)).containsOnly("firstName", "lastName");
     }
 
-    // --- Login: by email, and never reveals the password rules ---
-
-    @Test
-    void loginAcceptsAShortPasswordSoItNeverRevealsThePasswordRules() {
-        assertThat(violations(new LoginRequest("marko@example.test", "short"))).isEmpty();
-    }
-
-    @Test
-    void loginRequiresEmailAndPassword() {
-        assertThat(violatedFields(new LoginRequest(" ", ""))).containsOnly("email", "password");
-    }
-
-    @Test
-    void loginRejectsOversizedInputBeforeItReachesThePasswordHasher() {
-        assertThat(violatedFields(new LoginRequest("marko@example.test", "a".repeat(129)))).containsOnly("password");
-    }
-
-    // --- Refresh ---
-
-    @Test
-    void refreshRequiresAToken() {
-        assertThat(violatedFields(new RefreshRequest(" "))).containsOnly("refreshToken");
-    }
-
-    // --- Response shape: what the frontend reads ---
-
-    @Test
-    void authResponseHasTheFieldsTheFrontendReads() {
-        String json = JsonMapper.builder().build().writeValueAsString(new AuthResponse("access", "refresh", 900));
-
-        assertThat(JsonMapper.builder().build().readValue(json, Map.class))
-                .containsOnlyKeys("accessToken", "refreshToken", "tokenType", "expiresIn")
-                .containsEntry("tokenType", "Bearer")
-                .containsEntry("expiresIn", 900);
-    }
-
     private static RegisterRequest register(String username, String email, String password) {
         return new RegisterRequest(username, email, password, "Marko", "Markovic");
     }

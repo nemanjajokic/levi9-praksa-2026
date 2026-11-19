@@ -14,14 +14,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest
 @AutoConfigureMockMvc
-class JwksControllerTests {
+class JwksEndpointTests {
 
     @Autowired
     private MockMvc mockMvc;
 
     @Test
     void publishesOnlyThePublicKeyWithoutAuthentication() throws Exception {
-        mockMvc.perform(get("/.well-known/jwks.json"))
+        mockMvc.perform(get("/oauth2/jwks"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.keys.length()").value(1))
                 .andExpect(jsonPath("$.keys[0].kty").value("RSA"))

@@ -6,9 +6,8 @@ import com.levi9.reddit.auth.core.exception.NotFoundException;
 import com.levi9.reddit.auth.core.exception.UnauthorizedException;
 import com.levi9.reddit.auth.core.model.User;
 import com.levi9.reddit.auth.core.model.UserRole;
-import com.levi9.reddit.auth.infrastructure.repository.RefreshTokenRepository;
+import com.levi9.reddit.auth.infrastructure.security.AuthorizationRevoker;
 import com.levi9.reddit.auth.infrastructure.repository.UserRepository;
-import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,9 +21,9 @@ import static org.mockito.Mockito.*;
 
 class UserServiceTest {
     private final UserRepository users = mock(UserRepository.class);
-    private final RefreshTokenRepository tokens = mock(RefreshTokenRepository.class);
+    private final AuthorizationRevoker authorizations = mock(AuthorizationRevoker.class);
     private final BCryptPasswordEncoder passwords = new BCryptPasswordEncoder();
-    private final UserService service = new UserService(users, tokens, passwords);
+    private final UserService service = new UserService(users, authorizations, passwords);
     private User user;
 
     @BeforeEach
@@ -41,7 +40,7 @@ class UserServiceTest {
 
         assertThat(passwords.matches("new secret", user.getPasswordHash())).isTrue();
         assertThat(passwords.matches("secret", user.getPasswordHash())).isFalse();
-        verify(tokens).revokeAllActiveByUserId(eq(42L), any(Instant.class));
+        verify(authorizations).revokeAllOf(42L);
     }
 
     @Test
@@ -54,14 +53,14 @@ class UserServiceTest {
                         error -> assertThat(error.getErrorType()).isEqualTo(ErrorType.INVALID_CREDENTIALS));
 
         assertThat(user.getPasswordHash()).isEqualTo(previousHash);
-        verifyNoInteractions(tokens);
+        verifyNoInteractions(authorizations);
     }
 
     @Test
     void deletesUserAndRevokesTokens() {
         service.delete(1L, "secret");
         assertThat(user.isDeleted()).isTrue();
-        verify(tokens).revokeAllActiveByUserId(eq(1L), any(Instant.class));
+        verify(authorizations).revokeAllOf(1L);
     }
 
     @Test
@@ -70,7 +69,7 @@ class UserServiceTest {
                 .isInstanceOfSatisfying(UnauthorizedException.class,
                         error -> assertThat(error.getErrorType()).isEqualTo(ErrorType.INVALID_CREDENTIALS));
         assertThat(user.isDeleted()).isFalse();
-        verifyNoInteractions(tokens);
+        verifyNoInteractions(authorizations);
     }
 
     @Test
@@ -79,7 +78,7 @@ class UserServiceTest {
         assertThatThrownBy(() -> service.delete(1L, "secret"))
                 .isInstanceOfSatisfying(NotFoundException.class,
                         error -> assertThat(error.getErrorType()).isEqualTo(ErrorType.USER_NOT_FOUND));
-        verifyNoInteractions(tokens);
+        verifyNoInteractions(authorizations);
     }
 
     @Test
@@ -89,7 +88,7 @@ class UserServiceTest {
         assertThatThrownBy(() -> service.delete(1L, "secret"))
                 .isInstanceOfSatisfying(NotFoundException.class,
                         error -> assertThat(error.getErrorType()).isEqualTo(ErrorType.USER_NOT_FOUND));
-        verifyNoInteractions(tokens);
+        verifyNoInteractions(authorizations);
     }
 
     @Test
@@ -101,7 +100,7 @@ class UserServiceTest {
         assertThatThrownBy(() -> service.delete(1L, "secret"))
                 .isInstanceOfSatisfying(ForbiddenException.class,
                         error -> assertThat(error.getErrorType()).isEqualTo(ErrorType.ACCOUNT_DELETION_FORBIDDEN));
-        verifyNoInteractions(tokens);
+        verifyNoInteractions(authorizations);
         verify(admin, never()).delete();
     }
 }

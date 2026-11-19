@@ -23,8 +23,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
-    // Temporary until the authenticated user's identity is available.
-    private static final long CURRENT_USER_ID = 1L;
     private final UserService userService;
 
     public UserController(UserService userService) {
@@ -44,8 +42,8 @@ public class UserController {
 
     @DeleteMapping("/me")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteMe(@Valid @RequestBody DeleteUserRequest request) {
-        userService.delete(CURRENT_USER_ID, request.password());
+    public void deleteMe(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody DeleteUserRequest request) {
+        userService.delete(authenticatedUserId(jwt), request.password());
     }
 
     @PutMapping("/me/password")

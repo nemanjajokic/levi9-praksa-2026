@@ -107,7 +107,7 @@ class JwtKeyConfigTest {
                 .expiresAt(Instant.now().plusSeconds(60))
                 .build();
 
-        Jwt issued = config.jwtEncoder(key).encode(
+        Jwt issued = config.jwtEncoder(config.jwkSource(key)).encode(
                 JwtEncoderParameters.from(JwsHeader.with(SignatureAlgorithm.RS256).build(), claims));
         Jwt verified = NimbusJwtDecoder.withPublicKey(key.toRSAPublicKey()).build().decode(issued.getTokenValue());
 

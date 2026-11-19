@@ -128,12 +128,13 @@ class UserControllerTest {
 
     @Test
     void deletesUser() throws Exception {
+        authenticateAs("42");
         mvc.perform(delete("/api/users/me")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"password\":\"secret\"}"))
                 .andExpect(status().isNoContent());
 
-        verify(userService).delete(1L, "secret");
+        verify(userService).delete(42L, "secret");
     }
 
     @Test
@@ -152,8 +153,9 @@ class UserControllerTest {
 
     @Test
     void returnsUnauthorizedForWrongPassword() throws Exception {
+        authenticateAs("42");
         doThrow(new UnauthorizedException(ErrorType.INVALID_CREDENTIALS, "Invalid password"))
-                .when(userService).delete(1L, "wrong");
+                .when(userService).delete(42L, "wrong");
 
         mvc.perform(delete("/api/users/me")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -164,10 +166,11 @@ class UserControllerTest {
 
     @Test
     void returnsProblemDetailsForMissingUserAndForbiddenDeletion() throws Exception {
+        authenticateAs("42");
         doThrow(new NotFoundException(ErrorType.USER_NOT_FOUND, "User not found"))
-                .when(userService).delete(1L, "missing");
+                .when(userService).delete(42L, "missing");
         doThrow(new ForbiddenException(ErrorType.ACCOUNT_DELETION_FORBIDDEN, "This account cannot be deleted"))
-                .when(userService).delete(1L, "forbidden");
+                .when(userService).delete(42L, "forbidden");
 
         mvc.perform(delete("/api/users/me").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"password\":\"missing\"}"))

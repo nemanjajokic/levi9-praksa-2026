@@ -17,9 +17,18 @@ Add an entry whenever you introduce a local-only shortcut. Each entry says what 
   openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out private.pem
   ```
 - Only auth-service gets the private key. The other services need nothing secret: they fetch the public key
-  from auth-service's `/.well-known/jwks.json`.
+  from auth-service's `/oauth2/jwks`.
 - Never commit `private.pem`. Store it in the environment settings of the deploy target or a secret store.
 - If neither a key nor the flag is set, auth-service refuses to start. That is on purpose.
+
+### OAuth: public URL, gateway client secret, session cookie
+- **Local:** the public URL defaults to `http://localhost:3000` (the issuer in every token, and the base of the
+  gateway's redirect URI). `docker-compose.yml` sets `APP_OAUTH_GATEWAY_CLIENT_SECRET=local-gateway-secret`.
+- **Production:**
+  - `APP_PUBLIC_URL`: the site's own `https://` origin, exactly as the browser sees it, no trailing slash.
+  - `APP_OAUTH_GATEWAY_CLIENT_SECRET`: a long random value (`openssl rand -base64 32`), given to auth-service and
+    the gateway alike. auth-service refuses to start without it.
+  - `SERVER_SERVLET_SESSION_COOKIE_SECURE=true`, so the login session cookie is only sent over HTTPS.
 
 ### Rate limits and the client IP
 - Login (10 per minute) and register (10 per hour) are limited per client IP, in memory. One auth-service

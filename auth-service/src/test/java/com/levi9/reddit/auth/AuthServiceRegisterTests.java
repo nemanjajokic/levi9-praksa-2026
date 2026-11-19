@@ -1,16 +1,12 @@
 package com.levi9.reddit.auth;
 
-import com.levi9.reddit.auth.contracts.AuthResponse;
 import com.levi9.reddit.auth.contracts.RegisterRequest;
 import com.levi9.reddit.auth.core.exception.ConflictException;
 import com.levi9.reddit.auth.core.exception.ErrorType;
-import com.levi9.reddit.auth.core.model.RefreshToken;
 import com.levi9.reddit.auth.core.model.User;
 import com.levi9.reddit.auth.core.model.UserRole;
 import com.levi9.reddit.auth.core.service.AuthService;
-import com.levi9.reddit.auth.infrastructure.repository.RefreshTokenRepository;
 import com.levi9.reddit.auth.infrastructure.repository.UserRepository;
-import com.nimbusds.jose.jwk.RSAKey;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,15 +14,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -37,11 +26,10 @@ import java.util.concurrent.Future;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.within;
 
 /**
  * Register, against real Postgres, following the agreed rules (workspace DECISIONS.md, 2026-11-18):
- * a new account is a USER and is logged in straight away; a taken username may be named; a taken email
+ * a new account is a USER and gets no tokens (the frontend logs in next); a taken username may be named; a taken email
  * must never be named. Each call commits, and results are read back from the database.
  */
 @Import(TestcontainersConfiguration.class)
@@ -56,20 +44,14 @@ class AuthServiceRegisterTests {
     private UserRepository users;
 
     @Autowired
-    private RefreshTokenRepository refreshTokens;
-
-    @Autowired
     private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private RSAKey signingKey;
 
     @Autowired
     private JdbcTemplate jdbc;
 
     @BeforeEach
     void cleanTables() {
-        jdbc.execute("TRUNCATE refresh_tokens, users RESTART IDENTITY CASCADE");
+        jdbc.execute("TRUNCATE oauth2_authorization, users RESTART IDENTITY CASCADE");
     }
 
     @Test
@@ -96,28 +78,11 @@ class AuthServiceRegisterTests {
     }
 
     @Test
-    void logsTheNewUserInWithAnAccessTokenForThatUser() {
-        AuthResponse response = auth.register(request("marko", "marko@example.test"));
+    void returnsTheSavedUserWithItsId() {
+        User returned = auth.register(request("marko", "marko@example.test"));
 
-        User saved = users.findByUsernameIgnoringCase("marko").orElseThrow();
-        Jwt jwt = decode(response.accessToken());
-        assertThat(response.tokenType()).isEqualTo("Bearer");
-        assertThat(response.expiresIn()).isEqualTo(Duration.ofMinutes(15).toSeconds());
-        assertThat(jwt.getSubject()).isEqualTo(String.valueOf(saved.getId()));
-        assertThat(jwt.getClaimAsString("username")).isEqualTo("marko");
-        assertThat(jwt.getClaimAsStringList("roles")).containsExactly("USER");
-    }
-
-    @Test
-    void storesTheRefreshTokenOnlyAsAHashValidForSevenDays() throws Exception {
-        AuthResponse response = auth.register(request("marko", "marko@example.test"));
-
-        User saved = users.findByUsernameIgnoringCase("marko").orElseThrow();
-        RefreshToken stored = refreshTokens.findByTokenHash(sha256Hex(response.refreshToken())).orElseThrow();
-        assertThat(stored.getUserId()).isEqualTo(saved.getId());
-        assertThat(stored.getRevokedAt()).isNull();
-        assertThat(stored.getExpiresAt()).isCloseTo(Instant.now().plus(Duration.ofDays(7)), within(Duration.ofMinutes(1)));
-        assertThat(refreshTokens.findByTokenHash(response.refreshToken())).isEmpty();
+        assertThat(returned.getId()).isEqualTo(users.findByUsernameIgnoringCase("marko").orElseThrow().getId());
+        assertThat(returned.getUsername()).isEqualTo("marko");
     }
 
     @Test
@@ -128,7 +93,6 @@ class AuthServiceRegisterTests {
                 .isInstanceOfSatisfying(ConflictException.class,
                         e -> assertThat(e.getErrorType()).isEqualTo(ErrorType.USERNAME_TAKEN));
         assertThat(users.count()).isEqualTo(1);
-        assertThat(refreshTokens.count()).isEqualTo(1);
     }
 
     @Test
@@ -204,18 +168,5 @@ class AuthServiceRegisterTests {
 
     private static RegisterRequest request(String username, String email) {
         return new RegisterRequest(username, email, PASSWORD, "Marko", "Markovic");
-    }
-
-    private Jwt decode(String accessToken) {
-        try {
-            return NimbusJwtDecoder.withPublicKey(signingKey.toRSAPublicKey()).build().decode(accessToken);
-        } catch (Exception e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
-    private static String sha256Hex(String value) throws Exception {
-        byte[] digest = MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
-        return HexFormat.of().formatHex(digest);
     }
 }

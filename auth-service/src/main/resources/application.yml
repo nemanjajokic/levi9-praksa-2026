@@ -3,6 +3,13 @@ server:
   # Behind the gateway, the client's address arrives in X-Forwarded-For. Tomcat reads it from the right, skips
   # private-network hops (the gateway) and uses the first public one as the remote address (rate limits use it).
   forward-headers-strategy: native
+  servlet:
+    session:
+      # The login session (it lets /oauth2/authorize see who logged in). Not readable by scripts, not sent on
+      # cross-site requests. Production also needs secure: true (HTTPS only): see docs/production-changes.md.
+      cookie:
+        http-only: true
+        same-site: lax
 
 spring:
   application:
@@ -24,10 +31,14 @@ spring:
 
 app:
   jwt:
-    issuer: levddit-auth
+    # The public origin the browser sees (frontend, gateway and auth-service share it). Tokens carry it as iss.
+    issuer: ${APP_PUBLIC_URL:http://localhost:3000}
     access-token-ttl: 15m
     refresh-token-ttl: 7d
     generate-key: false   # production default; key comes from APP_JWT_PRIVATE_KEY + APP_JWT_KEY_ID
+  oauth:
+    gateway-client:
+      secret: ${APP_OAUTH_GATEWAY_CLIENT_SECRET:}   # required; startup fails without it
   # Per client IP, refilled gradually (10 per minute = one back every 6 s). DECISIONS.md 2026-11-18.
   # Generous on purpose: everyone in one office shares one IP.
   rate-limit:

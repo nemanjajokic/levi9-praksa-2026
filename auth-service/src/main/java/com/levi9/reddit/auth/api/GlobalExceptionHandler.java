@@ -90,7 +90,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /** Retry-After takes whole seconds. Rounded up and at least 1, so a client that obeys it is never too early. */
-    private static long wholeSecondsRoundedUp(Duration duration) {
+    static long wholeSecondsRoundedUp(Duration duration) {
         long seconds = duration.toSeconds() + (duration.toNanosPart() > 0 ? 1 : 0);
         return Math.max(1, seconds);
     }

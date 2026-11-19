@@ -121,7 +121,7 @@ class UserProfileTests {
 
     @Test
     void rejectsMissingOrInvalidUserIdentity() throws Exception {
-        mvc.perform(get(PROFILE)).andExpect(status().isForbidden());
+        mvc.perform(get(PROFILE)).andExpect(status().isUnauthorized());
         update(jwt().jwt(token -> token.subject("invalid")), "{\"firstName\":\"Ana\"}")
                 .andExpect(status().isUnauthorized());
     }

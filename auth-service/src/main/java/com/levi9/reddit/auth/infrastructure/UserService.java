@@ -10,7 +10,7 @@ import com.levi9.reddit.auth.core.exception.UnauthorizedException;
 import com.levi9.reddit.auth.core.exception.UserBannedException;
 import com.levi9.reddit.auth.core.model.User;
 import com.levi9.reddit.auth.core.model.UserRole;
-import com.levi9.reddit.auth.infrastructure.repository.RefreshTokenRepository;
+import com.levi9.reddit.auth.infrastructure.security.AuthorizationRevoker;
 import com.levi9.reddit.auth.infrastructure.repository.UserRepository;
 import java.time.Instant;
 import java.util.Optional;
@@ -23,12 +23,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class UserService {
     private final UserRepository users;
-    private final RefreshTokenRepository refreshTokens;
+    private final AuthorizationRevoker authorizations;
     private final PasswordEncoder passwords;
 
-    public UserService(UserRepository users, RefreshTokenRepository refreshTokens, PasswordEncoder passwords) {
+    public UserService(UserRepository users, AuthorizationRevoker authorizations, PasswordEncoder passwords) {
         this.users = users;
-        this.refreshTokens = refreshTokens;
+        this.authorizations = authorizations;
         this.passwords = passwords;
     }
 
@@ -66,7 +66,7 @@ public class UserService {
         }
         verifyPassword(user, password);
         user.delete();
-        refreshTokens.revokeAllActiveByUserId(userId, Instant.now());
+        authorizations.revokeAllOf(userId);
     }
 
     private static UserProfileResponse toProfileResponse(User user) {
@@ -80,8 +80,8 @@ public class UserService {
                 .filter(candidate -> !candidate.isDeleted())
                 .orElseThrow(() -> new NotFoundException(ErrorType.USER_NOT_FOUND, "User not found"));
         verifyPassword(user, currentPassword);
-        user.changePasswordHash(passwords.encode(newPassword));
-        refreshTokens.revokeAllActiveByUserId(userId, Instant.now());
+        user.changePasswordHash(passwords.encode(newPassword), Instant.now());
+        authorizations.revokeAllOf(userId);
     }
 
     private void verifyPassword(User user, String password) {

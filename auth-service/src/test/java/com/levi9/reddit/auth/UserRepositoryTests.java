@@ -29,7 +29,7 @@ class UserRepositoryTests {
 
     @BeforeEach
     void cleanTables() {
-        jdbc.execute("TRUNCATE refresh_tokens, users RESTART IDENTITY CASCADE");
+        jdbc.execute("TRUNCATE oauth2_authorization, users RESTART IDENTITY CASCADE");
     }
 
     @Test

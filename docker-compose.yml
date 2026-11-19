@@ -28,6 +28,7 @@ services:
     environment:
       <<: *db-env
       APP_JWT_GENERATE_KEY: "true"   # local only, see docs/production-changes.md
+      APP_OAUTH_GATEWAY_CLIENT_SECRET: local-gateway-secret   # local only; the gateway gets the same value
     depends_on:
       postgres:
         condition: service_healthy

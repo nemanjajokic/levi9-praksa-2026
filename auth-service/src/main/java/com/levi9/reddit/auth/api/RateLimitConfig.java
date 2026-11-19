@@ -10,8 +10,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import java.time.Clock;
 
 /**
- * Puts a rate limit on login and register, each with its own budget per client IP (see {@link RateLimitInterceptor}).
- * Refresh is not limited: its token is 256 random bits, so guessing one is hopeless anyway.
+ * Puts a rate limit on register, per client IP (see {@link RateLimitInterceptor}). Login's is a filter in
+ * {@link SecurityConfig}: form login never reaches MVC.
  * <p>
  * Imports {@link ClockConfig} itself, because {@code @WebMvcTest} slices load this class but not the clock.
  */
@@ -29,7 +29,7 @@ class RateLimitConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new RateLimitInterceptor(limits.login(), clock)).addPathPatterns("/api/auth/login");
-        registry.addInterceptor(new RateLimitInterceptor(limits.register(), clock)).addPathPatterns("/api/auth/register");
+        registry.addInterceptor(new RateLimitInterceptor(new RateLimiter(limits.register(), clock)))
+                .addPathPatterns("/api/auth/register");
     }
 }
