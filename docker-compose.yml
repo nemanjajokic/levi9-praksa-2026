@@ -49,6 +49,10 @@ services:
     environment:
       <<: *db-env
       APP_S3_ENDPOINT: http://moto:5000
+      APP_MOCKAUTH_ENABLED: "true"   # local only, see docs/production-changes.md
+      APP_COMMUNITYSTUB_ENABLED: "true"                    # local only, see docs/production-changes.md
+      APP_COMMUNITYSTUB_UNAVAILABLECOMMUNITYIDS: "999"     # community 999 behaves as missing/shut down
+      APP_COMMUNITYSTUB_NONMEMBERUSERIDS: "999"            # user 999 is a member of nothing
     depends_on:
       postgres:
         condition: service_healthy

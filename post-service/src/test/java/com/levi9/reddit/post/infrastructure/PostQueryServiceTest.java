@@ -12,6 +12,7 @@ import com.levi9.reddit.post.contracts.CommentResponse;
 import com.levi9.reddit.post.contracts.PageResponse;
 import com.levi9.reddit.post.contracts.PostResponse;
 import com.levi9.reddit.post.contracts.TopPeriod;
+import com.levi9.reddit.post.core.ImageStorage;
 import com.levi9.reddit.post.core.exception.PostNotFoundException;
 import com.levi9.reddit.post.core.model.Comment;
 import com.levi9.reddit.post.core.model.Post;
@@ -44,13 +45,16 @@ class PostQueryServiceTest {
     @Mock
     private CommentRepository comments;
 
+    @Mock
+    private ImageStorage imageStorage;
+
     private static final Instant NOW = Instant.parse("2026-11-18T12:00:00Z");
 
     private PostQueryService service;
 
     @BeforeEach
     void setUp() {
-        service = new PostQueryService(posts, comments, Clock.fixed(NOW, ZoneOffset.UTC));
+        service = new PostQueryService(posts, comments, imageStorage, Clock.fixed(NOW, ZoneOffset.UTC));
     }
 
     @Test

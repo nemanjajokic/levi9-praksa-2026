@@ -1,5 +1,8 @@
 package com.levi9.reddit.post.core.model;
 
+import com.levi9.reddit.post.core.exception.NotPostAuthorException;
+import com.levi9.reddit.post.core.exception.PostNotFoundException;
+import com.levi9.reddit.post.core.exception.PostRemovalForbiddenException;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -18,7 +21,7 @@ import java.util.Objects;
 @Entity
 @Table(name = "posts")
 public class Post {
-    private static final int MAX_IMAGES = 3;
+    public static final int MAX_IMAGES = 3;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -64,6 +67,12 @@ public class Post {
     protected Post() {}
 
     public Post(String title, Long authorId, String authorUsername, Long communityId) {
+        this(title, null, authorId, authorUsername, communityId);
+    }
+
+    /** A new post; {@code updatedAt} stays null until the author edits it. */
+    public Post(String title, String content, Long authorId, String authorUsername, Long communityId) {
+        this.content = content;
         this.title = Objects.requireNonNull(title, "title");
         this.authorId = Objects.requireNonNull(authorId, "authorId");
         this.authorUsername = Objects.requireNonNull(authorUsername, "authorUsername");
@@ -137,6 +146,41 @@ public class Post {
         }
     }
 
+    public boolean isRemoved() {
+        return removedAt != null;
+    }
+
+    /**
+     * Edit on behalf of a caller: a removed post is gone (404), and only the author may edit, admins included.
+     */
+    public void editBy(Actor actor, String title, String content, Instant at) {
+        Objects.requireNonNull(actor, "actor");
+        if (isRemoved()) {
+            throw new PostNotFoundException(id);
+        }
+        if (!actor.isAuthorOf(this)) {
+            throw new NotPostAuthorException(id);
+        }
+        edit(title, content, at);
+    }
+
+    /**
+     * Soft remove on behalf of a caller: the author or an admin. Idempotent: removing an already removed post
+     * succeeds without changes, so the original {@code removedBy} / {@code removedAt} are kept. The permission
+     * check comes first, so a stranger is refused whether or not the post is already removed.
+     */
+    public void removeBy(Actor actor, Instant at) {
+        Objects.requireNonNull(actor, "actor");
+        if (!actor.isAuthorOf(this) && !actor.admin()) {
+            throw new PostRemovalForbiddenException(id);
+        }
+        if (isRemoved()) {
+            return;
+        }
+        remove(actor.id(), at);
+    }
+
+    /** Low-level change without permission checks; callers acting for a user use {@link #editBy}. */
     public void edit(String title, String content, Instant at) {
         Instant updatedAt = Objects.requireNonNull(at, "at");
         this.title = Objects.requireNonNull(title, "title");
@@ -155,6 +199,7 @@ public class Post {
         this.commentCount = count;
     }
 
+    /** Low-level change without permission checks; callers acting for a user use {@link #removeBy}. */
     public void remove(Long userId, Instant at) {
         Instant removedAt = Objects.requireNonNull(at, "at");
         this.removedBy = Objects.requireNonNull(userId, "userId");

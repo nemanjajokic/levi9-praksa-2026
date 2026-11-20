@@ -7,6 +7,12 @@ spring:
   datasource:
     hikari:
       schema: post   # connections start in this schema, so native SQL finds the tables too
+  servlet:
+    multipart:
+      # Spring's default is 1 MB per file. Per image the limit is ImageUpload.MAX_BYTES (5 MB): bigger files
+      # are rejected here with 413 before they are read into memory. A request holds up to 3 images plus JSON.
+      max-file-size: 5MB
+      max-request-size: 16MB
   flyway:
     schemas: post
     default-schema: post
@@ -18,6 +24,9 @@ spring:
       hibernate.default_schema: post
       hibernate.jdbc.time_zone: UTC
       hibernate.query.fail_on_pagination_over_collection_fetch: true
+      # Lazy collections (a post's images) are loaded for up to 100 owners at once, so a page of 20 posts
+      # costs one extra query for all their images instead of 20.
+      hibernate.default_batch_fetch_size: 100
 
 app:
   s3:

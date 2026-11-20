@@ -5,14 +5,20 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.levi9.reddit.post.contracts.CommentResponse;
 import com.levi9.reddit.post.contracts.PageResponse;
+import com.levi9.reddit.post.contracts.PostImageResponse;
 import com.levi9.reddit.post.contracts.PostResponse;
 import com.levi9.reddit.post.contracts.TopPeriod;
+import com.levi9.reddit.post.core.ImageStorage.StoredImage;
+import com.levi9.reddit.post.core.exception.ImageNotFoundException;
 import com.levi9.reddit.post.core.exception.PostNotFoundException;
+import com.levi9.reddit.post.infrastructure.PostCommandService;
 import com.levi9.reddit.post.infrastructure.PostQueryService;
 import java.time.Instant;
 import java.util.List;
@@ -35,9 +41,12 @@ class PostControllerTest {
     @MockitoBean
     private PostQueryService postQueryService;
 
+    @MockitoBean
+    private PostCommandService postCommandService;
+
     @Test
     void findPosts_isPublicAndUsesDefaultPaging() throws Exception {
-        PostResponse post = new PostResponse(1L, "Hello", "Body", 2L, "luka", 7L, 3, 0, CREATED, null);
+        PostResponse post = new PostResponse(1L, "Hello", "Body", 2L, "luka", 7L, 3, 0, CREATED, null, List.of());
         when(postQueryService.findPosts(null, null, 0, 20)).thenReturn(new PageResponse<>(List.of(post), 0, 20, 1, 1));
 
         mockMvc.perform(get("/api/posts"))
@@ -45,6 +54,51 @@ class PostControllerTest {
                 .andExpect(jsonPath("$.content[0].title").value("Hello"))
                 .andExpect(jsonPath("$.content[0].authorUsername").value("luka"))
                 .andExpect(jsonPath("$.totalElements").value(1));
+    }
+
+    @Test
+    void getPost_listsImagesWithUrls() throws Exception {
+        when(postQueryService.getPost(1L)).thenReturn(new PostResponse(1L, "Hello", "Body", 2L, "luka", 7L, 3, 0,
+                CREATED, null, List.of(new PostImageResponse(10L, "/api/posts/1/images/10"))));
+
+        mockMvc.perform(get("/api/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.images.length()").value(1))
+                .andExpect(jsonPath("$.images[0].id").value(10))
+                .andExpect(jsonPath("$.images[0].url").value("/api/posts/1/images/10"));
+    }
+
+    @Test
+    void getPost_withoutImages_hasEmptyArray() throws Exception {
+        when(postQueryService.getPost(1L))
+                .thenReturn(new PostResponse(1L, "Hello", "Body", 2L, "luka", 7L, 3, 0, CREATED, null, null));
+
+        mockMvc.perform(get("/api/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.images").isArray())
+                .andExpect(jsonPath("$.images").isEmpty());
+    }
+
+    @Test
+    void getImage_isPublic_servesBytesWithTypeAndCacheHeaders() throws Exception {
+        byte[] png = {(byte) 0x89, 'P', 'N', 'G'};
+        when(postQueryService.getImage(1L, 10L)).thenReturn(new StoredImage(png, "image/png"));
+
+        mockMvc.perform(get("/api/posts/1/images/10"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("image/png"))
+                .andExpect(content().bytes(png))
+                .andExpect(header().string("Cache-Control", "max-age=86400, public"))
+                .andExpect(header().string("X-Content-Type-Options", "nosniff"));
+    }
+
+    @Test
+    void getImage_missing_isNotFound() throws Exception {
+        when(postQueryService.getImage(1L, 99L)).thenThrow(new ImageNotFoundException(1L, 99L));
+
+        mockMvc.perform(get("/api/posts/1/images/99"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errorType").value("IMAGE_NOT_FOUND"));
     }
 
     @Test
@@ -61,7 +115,9 @@ class PostControllerTest {
     @Test
     void findPosts_withTooLargePageSize_returnsBadRequest() throws Exception {
         mockMvc.perform(get("/api/posts").param("size", "1000"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Request validation failed"))
+                .andExpect(jsonPath("$.errors[0].field").value("size"));
 
         verifyNoInteractions(postQueryService);
     }
@@ -74,7 +130,7 @@ class PostControllerTest {
 
     @Test
     void findTop_withoutPeriod_isPublicAndDefaultsToAllTime() throws Exception {
-        PostResponse post = new PostResponse(1L, "Hello", "Body", 2L, "luka", 7L, 42, 0, CREATED, null);
+        PostResponse post = new PostResponse(1L, "Hello", "Body", 2L, "luka", 7L, 42, 0, CREATED, null, List.of());
         when(postQueryService.findTop(TopPeriod.ALL)).thenReturn(List.of(post));
 
         mockMvc.perform(get("/api/posts/top"))
@@ -85,7 +141,7 @@ class PostControllerTest {
 
     @Test
     void findTop_withWeekPeriod_passesWeek() throws Exception {
-        PostResponse post = new PostResponse(1L, "Fresh", "Body", 2L, "luka", 7L, 5, 0, CREATED, null);
+        PostResponse post = new PostResponse(1L, "Fresh", "Body", 2L, "luka", 7L, 5, 0, CREATED, null, List.of());
         when(postQueryService.findTop(TopPeriod.WEEK)).thenReturn(List.of(post));
 
         mockMvc.perform(get("/api/posts/top").param("period", "WEEK"))
@@ -104,7 +160,7 @@ class PostControllerTest {
     @Test
     void getPost_returnsPost() throws Exception {
         when(postQueryService.getPost(1L))
-                .thenReturn(new PostResponse(1L, "Hello", "Body", 2L, "luka", 7L, 3, 0, CREATED, null));
+                .thenReturn(new PostResponse(1L, "Hello", "Body", 2L, "luka", 7L, 3, 0, CREATED, null, List.of()));
 
         mockMvc.perform(get("/api/posts/1"))
                 .andExpect(status().isOk())
@@ -118,8 +174,9 @@ class PostControllerTest {
 
         mockMvc.perform(get("/api/posts/99"))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.title").value("Post not found"))
-                .andExpect(jsonPath("$.status").value(404));
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.errorType").value("POST_NOT_FOUND"))
+                .andExpect(jsonPath("$.detail").value("Post not found: 99"));
     }
 
     @Test

@@ -4,9 +4,15 @@ import com.levi9.reddit.post.contracts.CommentResponse;
 import com.levi9.reddit.post.contracts.PageResponse;
 import com.levi9.reddit.post.contracts.PostResponse;
 import com.levi9.reddit.post.contracts.TopPeriod;
+import com.levi9.reddit.post.core.ImageStorage;
+import com.levi9.reddit.post.core.ImageStorage.StoredImage;
+import com.levi9.reddit.post.core.exception.ImageNotFoundException;
 import com.levi9.reddit.post.core.exception.PostNotFoundException;
 import com.levi9.reddit.post.core.model.Comment;
 import com.levi9.reddit.post.core.model.Post;
+import com.levi9.reddit.post.core.model.PostImage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.levi9.reddit.post.infrastructure.repository.CommentRepository;
 import com.levi9.reddit.post.infrastructure.repository.PostRepository;
 import java.time.Clock;
@@ -29,13 +35,18 @@ public class PostQueryService {
 
     private static final Duration WEEK = Duration.ofDays(7);
 
+    private static final Logger log = LoggerFactory.getLogger(PostQueryService.class);
+
     private final PostRepository posts;
     private final CommentRepository comments;
+    private final ImageStorage imageStorage;
     private final Clock clock;
 
-    public PostQueryService(PostRepository posts, CommentRepository comments, Clock clock) {
+    public PostQueryService(
+            PostRepository posts, CommentRepository comments, ImageStorage imageStorage, Clock clock) {
         this.posts = posts;
         this.comments = comments;
+        this.imageStorage = imageStorage;
         this.clock = clock;
     }
 
@@ -59,7 +70,7 @@ public class PostQueryService {
         } else {
             result = posts.findByRemovedAtIsNull(pageable);
         }
-        return toPage(result, PostQueryService::toResponse);
+        return toPage(result, PostMapper::toResponse);
     }
 
     /**
@@ -72,13 +83,32 @@ public class PostQueryService {
             case WEEK -> posts.findTop10ByCreatedAtGreaterThanEqualAndRemovedAtIsNullOrderByScoreDescIdDesc(
                     clock.instant().minus(WEEK));
         };
-        return top.stream().map(PostQueryService::toResponse).toList();
+        return top.stream().map(PostMapper::toResponse).toList();
     }
 
     public PostResponse getPost(Long id) {
         return posts.findByIdAndRemovedAtIsNull(id)
-                .map(PostQueryService::toResponse)
+                .map(PostMapper::toResponse)
                 .orElseThrow(() -> new PostNotFoundException(id));
+    }
+
+    /**
+     * The file of one image of a visible post. Images of a removed post disappear together with the post.
+     *
+     * @throws PostNotFoundException  the post is missing or removed
+     * @throws ImageNotFoundException the post has no such image, or its file is missing from storage
+     */
+    public StoredImage getImage(Long postId, Long imageId) {
+        Post post = posts.findByIdAndRemovedAtIsNull(postId).orElseThrow(() -> new PostNotFoundException(postId));
+        PostImage image = post.getImages().stream()
+                .filter(candidate -> candidate.getId().equals(imageId))
+                .findFirst()
+                .orElseThrow(() -> new ImageNotFoundException(postId, imageId));
+        return imageStorage.load(image.getS3Key()).orElseThrow(() -> {
+            // The database says the file exists: worth a look, but for the caller it's simply not there.
+            log.warn("Image {} of post {} is missing from storage (key {})", imageId, postId, image.getS3Key());
+            return new ImageNotFoundException(postId, imageId);
+        });
     }
 
     /** Comments of a visible post, newest first. 404 if the post itself is missing or removed. */
@@ -97,20 +127,6 @@ public class PostQueryService {
                 page.getSize(),
                 page.getTotalElements(),
                 page.getTotalPages());
-    }
-
-    private static PostResponse toResponse(Post post) {
-        return new PostResponse(
-                post.getId(),
-                post.getTitle(),
-                post.getContent(),
-                post.getAuthorId(),
-                post.getAuthorUsername(),
-                post.getCommunityId(),
-                post.getScore(),
-                post.getCommentCount(),
-                post.getCreatedAt(),
-                post.getUpdatedAt());
     }
 
     private static CommentResponse toResponse(Comment comment) {
