@@ -10,6 +10,8 @@ import com.levi9.reddit.auth.core.exception.UnauthorizedException;
 import com.levi9.reddit.auth.core.exception.UserBannedException;
 import com.levi9.reddit.auth.core.service.AuthService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -99,6 +101,26 @@ class AuthControllerTest {
     }
 
     // --- Bad input: 400 before the service runs ---
+
+    @ParameterizedTest
+    @ValueSource(strings = {"m", "me", "Me", "ME"})
+    void usernamesShorterThanThreeCharactersAreRejectedBeforeRegistration(String username) throws Exception {
+        postJson("/api/auth/register", REGISTER_BODY.replace("\"marko\"", "\"" + username + "\""))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.errors[*].field").value(hasItem("username")));
+
+        verifyNoInteractions(auth);
+    }
+
+    @Test
+    void aThreeCharacterUsernameCanBeRegistered() throws Exception {
+        when(auth.register(any(RegisterRequest.class))).thenReturn(TOKENS);
+
+        postJson("/api/auth/register", REGISTER_BODY.replace("\"marko\"", "\"mem\""))
+                .andExpect(status().isCreated())
+                .andExpect(header().string("Location", "/api/users/mem"));
+    }
 
     @Test
     void anInvalidBodyIs400NamingTheFieldButNeverEchoingThePassword() throws Exception {

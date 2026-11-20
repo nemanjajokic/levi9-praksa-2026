@@ -4,6 +4,8 @@ import com.levi9.reddit.auth.core.model.User;
 import com.levi9.reddit.auth.infrastructure.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
@@ -97,5 +99,23 @@ class UserRepositoryTests {
 
     private static User user(String username, String email) {
         return new User(username, email, "hash", "First", "Last");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "m", "me", "😀😀"})
+    void databaseRejectsShortUsernamesInsertedDirectly(String username) {
+        assertThatThrownBy(() -> jdbc.update("""
+                INSERT INTO users (username, email, password_hash, first_name, last_name)
+                VALUES (?, 'user@example.test', 'hash', 'First', 'Last')
+                """, username))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("ck_users_username_min_length");
+    }
+
+    @Test
+    void databaseAcceptsAThreeCharacterUsername() {
+        users.saveAndFlush(user("mem", "user@example.test"));
+
+        assertThat(users.findByUsernameIgnoringCase("mem")).isPresent();
     }
 }

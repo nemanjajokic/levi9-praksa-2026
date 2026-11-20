@@ -60,6 +60,9 @@ public class User {
 
     public User(String username, String email, String passwordHash, String firstName, String lastName) {
         this.username = Objects.requireNonNull(username, "username");
+        if (username.codePointCount(0, username.length()) < 3) {
+            throw new IllegalArgumentException("username must be at least 3 characters");
+        }
         this.email = Objects.requireNonNull(email, "email");
         this.passwordHash = Objects.requireNonNull(passwordHash, "passwordHash");
         this.firstName = Objects.requireNonNull(firstName, "firstName");
